@@ -1,80 +1,41 @@
 const fs = require("fs");
 const path = require("path");
+const databasePath = path.join(__dirname, "../databases/userDatabase.json");
 
-const commentsPath = path.join(__dirname, "../databases/commentDatabase.json");
+function readDatabase() {
+  if (!fs.existsSync(databasePath)) fs.writeFileSync(databasePath, "[]");
+  return JSON.parse(fs.readFileSync(databasePath));
+}
 
-exports.getComments = async (req, res) => {
-  try {
-    const comments = JSON.parse(fs.readFileSync(commentsPath));
-    res.status(200).json(comments);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+function writeDatabase(data) {
+  fs.writeFileSync(databasePath, JSON.stringify(data, null, 2));
+}
+
+exports.register = (req, res) => {
+  const { username, email, password } = req.body;
+  if (!username || !email || !password) {
+    return res.status(400).json({ message: "All fields are required" });
   }
+  const users = readDatabase();
+  const newUser = { id: users.length + 1, username, email, password };
+  users.push(newUser);
+  writeDatabase(users);
+  res
+    .status(201)
+    .json({ id: newUser.id, username: newUser.username, email: newUser.email });
 };
 
-exports.getCommentById = async (req, res) => {
-  try {
-    const commentId = parseInt(req.params.id);
-    const comments = JSON.parse(fs.readFileSync(commentsPath));
-    const comment = comments.find((comment) => comment.id === commentId);
-    if (!comment) {
-      return res.status(404).json({ message: "Comment not found" });
-    }
-    res.status(200).json(comment);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+exports.login = (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ message: "Email end password are required" });
   }
-};
-
-exports.addComment = async (req, res) => {
-  try {
-    const comment = req.body;
-    const comments = JSON.parse(fs.readFileSync(commentsPath));
-
-    const lastComment = comments[comments.length - 1];
-    const newId = lastComment ? lastComment.id + 1 : 1;
-    comment.id = newId;
-
-    comments.push(comment);
-    fs.writeFileSync(commentsPath, JSON.stringify(comments, null, 2));
-    res.status(201).json(comment);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  const users = readDatabase();
+  const user = users.find((u) => u.email === email && u.password === password);
+  if (!user) {
+    return res.status(401).json({ message: "Invalid credentials" });
   }
-};
-
-exports.updateComment = async (req, res) => {
-  try {
-    const commentId = parseInt(req.params.id);
-    const updatedComment = req.body;
-    const comments = JSON.parse(fs.readFileSync(commentsPath));
-    const commentIndex = comments.findIndex(
-      (comment) => comment.id === commentId
-    );
-    if (commentIndex === -1) {
-      return res.status(404).json({ message: "Comment not found" });
-    }
-    comments[commentIndex] = { ...updatedComment, id: commentId };
-    fs.writeFileSync(commentsPath, JSON.stringify(comments, null, 2));
-    res.status(200).json(comments[commentIndex]);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-exports.deleteComment = async (req, res) => {
-  try {
-    const commentId = parseInt(req.params.id);
-    const comments = JSON.parse(fs.readFileSync(commentsPath));
-    const filteredComments = comments.filter(
-      (comment) => comment.id !== commentId
-    );
-    if (filteredComments.length === comments.length) {
-      return res.status(404).json({ message: "Comment not found" });
-    }
-    fs.writeFileSync(commentsPath, JSON.stringify(filteredComments, null, 2));
-    res.status(200).json({ message: "Comment deleted" });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+  res
+    .status(200)
+    .json({ id: user.id, username: user.username, email: user.email });
 };
