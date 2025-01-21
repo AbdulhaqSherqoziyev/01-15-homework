@@ -3,19 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File Upload and Delete</title>
+    <title>File Upload</title>
 </head>
 <body>
     <h1>File Upload</h1>
     <form id="uploadForm" enctype="multipart/form-data">
         <input type="file" name="file" id="fileInput">
         <button type="submit">Upload</button>
-    </form>
-
-    <h1>File Delete</h1>
-    <form id="deleteForm">
-        <input type="text" name="filename" id="filenameInput" placeholder="Enter filename">
-        <button type="submit">Delete</button>
     </form>
 
     <script>
@@ -28,18 +22,6 @@
             const response = await fetch('/upload', {
                 method: 'POST',
                 body: formData,
-            });
-
-            const result = await response.text();
-            alert(result);
-        });
-
-        document.getElementById('deleteForm').addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const filename = document.getElementById('filenameInput').value;
-
-            const response = await fetch(`/delete/${filename}`, {
-                method: 'DELETE',
             });
 
             const result = await response.text();
